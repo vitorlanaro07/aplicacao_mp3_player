@@ -1,6 +1,9 @@
+import PIL.ImageTransform
 from mutagen.mp3 import MP3
-
-from PIL import Image
+from PIL import Image, ImageTransform
+from io import BytesIO
+import base64
+import os
 
 class Musica:
     def __init__(self, diretorio):
@@ -37,7 +40,10 @@ class Musica:
 
     @property
     def capa(self):
-        return self.__capa
+        buffer = self.__capa
+        capa = BytesIO(buffer)
+        imagem = Image.open(capa).resize((335,375))
+        imagem.save(os.getcwd()+"/modulos/cache/capa.png")
 
 
     def duracao(self):
@@ -48,13 +54,13 @@ class Musica:
         segundos = tempo
         return minutos, segundos
 
-"""
-                              Para Testes
+#
+#
+# musica = Musica("../musicas/01 - Oxalá.mp3")
+# #
+# print(musica.capa)
 
-# musica = Musica("../musicas/02 Leis Próprias (Acústico).mp3")
-# minutos, segundo = musica.duracao()
-# print("{} - {}. Tempo: {:02}:{:02}".format(musica.artista, musica.titulo, minutos, segundo))
 
-"""
+
 
 
