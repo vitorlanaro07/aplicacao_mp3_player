@@ -1,29 +1,25 @@
-import pygame as pg
+import os
+from PIL import Image
+import base64
+from io import BytesIO
 
 class Botao:
-    def __init__(self, imagem, escala, x , y):
-        largura = imagem.get_width()
-        altura = imagem.get_height()
-        self.imagem = pg.transform.scale(imagem,(int(largura * escala), int(altura * escala)))
-        self.clicked = False
-        self.rect = imagem.get_rect()
-        self.rect.topleft = (x, y)
+    def __init__(self, diretorio):
+        self.__diretorio = diretorio
+        self.__imagem = Image.open(diretorio)
 
-    def get_surface(self):
-        return self.imagem
 
-    def draw (self, janela):
-        click = None
-        pos = pg.mouse.get_pos()
+    @property
+    def diretorio(self):
+        return self.__diretorio
 
-        if self.rect.collidepoint(pos):
-            if pg.mouse.get_pressed()[0] == True and self.clicked == False:
-                click = True
-                self.clicked = True
+    @property
+    def imagem(self):
+        return self.__imagem
 
-        if pg.mouse.get_pressed()[0] == False:
-            self.clicked = False
-
-        janela.blit(self.imagem, ((self.rect.x), (self.rect.y)))
-        return click
+    def resize_da_imagem_para_base64(self, largura, altura):
+        nova_resolucao = (largura, altura)
+        buffer = BytesIO()
+        self.imagem.resize((nova_resolucao)).save(buffer, format="PNG")
+        return base64.b64encode(buffer.getvalue())
 
