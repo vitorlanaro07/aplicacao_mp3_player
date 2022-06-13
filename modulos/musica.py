@@ -56,10 +56,8 @@ class Musica:
 
 #
 #
-# musica = Musica("../musicas/01 - Oxalá.mp3")
-# #
-# print(musica.capa)
-
+# musica = Musica("../musicas/02 Leis Próprias (Acústico).mp3")
+# print(int(musica.duracao_segundos_total))
 
 
 
