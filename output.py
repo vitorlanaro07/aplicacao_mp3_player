@@ -1,19 +1,31 @@
-import PySimpleGUI as sg
-sg.theme('DarkAmber')
-layout = [
-        [sg.Text('Enter the value',justification='center',size=(100,1))],
-        [sg.Input(justification='center',size=(100,1))],
-        [sg.Button('Enter','center',size=(100,1))]
-     ]
+import os
+import pygame
+import time
+
+pygame.mixer.init()
+pygame.display.init()
+
+screen = pygame.display.set_mode ( ( 420 , 240 ) )
+
+all_music = os.listdir(os.getcwd()+"/musicas/")
+playlist = []
+for musica in all_music:
+    playlist.append(os.getcwd()+"/musicas/"+musica)
 
 
-window = sg.Window('My new window', layout, size=(500,300), grab_anywhere=True)
 
-while True:
-    event, values = window.read()   # Read the event that happened and the values dictionary
-    print(event, values)
-    if event == None or event == 'Exit':     # If user closed window with X or if user clicked "Exit" button then exit
-        break
-    if event == 'Button':
-      print('You pressed the button')
-    window.close()
+pygame.mixer.music.load ( playlist.pop() )  # Get the first track from the playlist
+pygame.mixer.music.queue ( playlist.pop() ) # Queue the 2nd song
+pygame.mixer.music.set_endevent (  )    # Setup the end track event
+pygame.mixer.music.play()           # Play the music
+print(playlist)
+running = True
+while running:
+   for event in pygame.event.get():
+      if event.type == pygame.USEREVENT:    # A track has ended
+         if len ( playlist ) > 0:       # If there are more tracks in the queue...
+            pygame.mixer.music.queue ( playlist.pop() ) # Q
+
+
+
+

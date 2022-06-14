@@ -2,7 +2,6 @@ import PIL.ImageTransform
 from mutagen.mp3 import MP3
 from PIL import Image, ImageTransform
 from io import BytesIO
-import base64
 import os
 
 class Musica:
@@ -54,11 +53,31 @@ class Musica:
         segundos = tempo
         return minutos, segundos
 
+    def __str__(self):
+        return f"{self.artista} - {self.titulo}, {int(self.duracao_segundos_total)} seg. No diretório: {self.diretorio}"
 #
 #
-# musica = Musica("../musicas/02 Leis Próprias (Acústico).mp3")
-# print(int(musica.duracao_segundos_total))
 
 
-
+# def carregar_playlist():
+#     all_music = os.listdir("../musicas/")
+#     playlist = []
+#     for musica in all_music:
+#         playlist.append("../musicas/" + musica)
+#     return playlist
+#
+#
+#
+#
+# playlist = carregar_playlist()
+# new_playlist = []
+# for song in playlist:
+#     try:
+#         new_playlist.append(Musica(song))
+#     except:
+#         print(song)
+#
+#
+# for song in new_playlist:
+#     print(song)
 
