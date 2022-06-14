@@ -1,36 +1,39 @@
-# import os
-# import pygame
-# import time
-#
-# pygame.mixer.init()
-# pygame.display.init()
-#
-# screen = pygame.display.set_mode ( ( 420 , 240 ) )
-#
-# all_music = os.listdir(os.getcwd()+"/musicas/")
-# playlist = []
-# for musica in all_music:
-#     playlist.append(os.getcwd()+"/musicas/"+musica)
-#
-#
-#
-# pygame.mixer.music.load ( playlist.pop() )  # Get the first track from the playlist
-# pygame.mixer.music.queue ( playlist.pop() ) # Queue the 2nd song
-# pygame.mixer.music.set_endevent (  )    # Setup the end track event
-# pygame.mixer.music.play()           # Play the music
-# print(playlist)
-# running = True
-# while running:
-#    for event in pygame.event.get():
-#       if event.type == pygame.USEREVENT:    # A track has ended
-#          if len ( playlist ) > 0:       # If there are more tracks in the queue...
-#             pygame.mixer.music.queue ( playlist.pop() ) # Q
-#
-#
-#
-#
-import os
+import PySimpleGUI as sg
 
-from mutagen.mp3 import MP3
-audio = MP3(os.getcwd()+"/musicas/Lunar.mp3")
-print(audio.info.length)
+def test():
+    import threading
+    layout = [[sg.Text('Testing progress bar:')],
+              [sg.ProgressBar(max_value=100, orientation='h', size=(20, 20), key='progress_1')]]
+
+    main_window = sg.Window('Test', layout, finalize=True)
+    current_value = 1
+    main_window['progress_1'].update(current_value)
+
+    threading.Thread(target=another_function,
+                     args=(main_window, ),
+                     daemon=True).start()
+
+    while True:
+        window, event, values = sg.read_all_windows()
+        if event == 'Exit':
+            break
+        if event.startswith('update_'):
+            print(f'event: {event}, value: {values[event]}')
+            key_to_update = event[len('update_'):]
+            window[key_to_update].update(values[event])
+            window.refresh()
+            continue
+        # process any other events ...
+    window.close()
+
+def another_function(window):
+    import time
+    import random
+    for i in range(100):
+        time.sleep(1)
+        current_value = random.randrange(10, 20)
+        window.write_event_value('update_progress_1', current_value)
+    time.sleep(2)
+    window.write_event_value('Exit', '')
+
+test()

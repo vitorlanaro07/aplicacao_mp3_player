@@ -9,7 +9,7 @@ mixer.init()
 def carregar_tela():
     musica_pausada = False
     musica_atual = 0
-    sg.theme("Dark")
+    sg.theme("DarkAmber")
     color = (sg.theme_background_color(), sg.theme_background_color())
 
     #carrega imagens dos botões
@@ -18,7 +18,7 @@ def carregar_tela():
     #Carrega Playlist
     playlist = carregar_playlist()
 
-    titulo, tempo_total = carregar_dados_das_musicas(musica_atual, playlist)
+    titulo, tempo_total, tempo_total_segundo = carregar_dados_das_musicas(musica_atual, playlist)
     if playlist[musica_atual].capa:
         new_capa = os.getcwd()+"/modulos/cache/capa.png"
     else:
@@ -28,7 +28,7 @@ def carregar_tela():
                     [sg.Text(titulo,key="TITULO")], #sg.Button("", image_data= botao_pastas, button_color=color, border_width=0)
                     [sg.Image(new_capa, key= "CAPA")],
                     [sg.Text(text="00:00", key="-TEMPO-"), sg.Text("/") ,sg.Text(text=tempo_total, key="TEMPO_TOTAL")],
-                    [sg.Canvas(background_color="#b8b3ad",size=(370,0))],#nova_musica.duracao_segundos_total, s=(150,3)),nova_musica.duracao_segundos_total, s=(150,3)),
+                    [sg.ProgressBar(tempo_total_segundo,relief="RELIEF_SUNKEN" ,bar_color="Black",orientation='h',s=(23, 6), k='-PBAR-', pad=(0,10))],
                     [sg.Button('', image_data=botao_voltar, button_color=color, border_width=0,key="BACK"),
                    sg.Button('', image_data=botao_avancar, button_color=color, border_width=0, key='NEXT'),
                    sg.Button('', image_data=botao_play, button_color=color, border_width=0, key='PLAY'),
@@ -38,7 +38,7 @@ def carregar_tela():
 
     layout = [[sg.Column(layout_colum, element_justification="center")]]
 
-    janela = sg.Window("MP3 Player", layout, size=(415, 560), finalize=True, grab_anywhere=True)
+    janela = sg.Window("MP3 Player", layout, size=(415, 585), finalize=True, grab_anywhere=True)
 
     while True:
         evento, valores = janela.read(timeout=1000)
@@ -49,6 +49,7 @@ def carregar_tela():
             tempo = mixer.music.get_pos() / 1000
             tempo_atual_musica = time.strftime("%M:%S", time.gmtime(tempo))
             janela["-TEMPO-"].update(tempo_atual_musica)
+            janela["-PBAR-"].update(tempo)
 
         if evento == "PLAY" and not musica_pausada:
             play_musica(playlist, musica_atual)
@@ -64,7 +65,6 @@ def carregar_tela():
             mixer.music.stop()
 
         if evento == "NEXT":
-            print(musica_atual, len(playlist))
             try:
                 musica_atual += 1
                 altera_musica(musica_atual, playlist, janela)
@@ -73,11 +73,12 @@ def carregar_tela():
                 altera_musica(musica_atual, playlist, janela)
 
         if evento == "BACK":
-            try:
+            if not musica_atual <= 0:
                 musica_atual -=1
                 altera_musica(musica_atual, playlist, janela)
-            except:
-                musica_atual = 0
+            else:
+                print(musica_atual)
+                musica_atual = len(playlist) - 1
                 altera_musica(musica_atual, playlist, janela)
 
 
@@ -88,7 +89,7 @@ def altera_musica(musica_atual, playlist, janela):
     mixer.music.load(playlist[musica_atual].diretorio)
     mixer.music.play()
 
-    titulo, tempo_total = carregar_dados_das_musicas(musica_atual, playlist)
+    titulo, tempo_total, tempo_total_segundos = carregar_dados_das_musicas(musica_atual, playlist)
 
     if playlist[musica_atual].capa:
         new_capa = os.getcwd()+"/modulos/cache/capa.png"
@@ -101,16 +102,13 @@ def altera_musica(musica_atual, playlist, janela):
     janela["CAPA"].update(new_capa)
 
 
-
     #carrega os metadados da musica (titulo, tempo da musica)
 def carregar_dados_das_musicas(musica_atual, playlist):
-    # try:
     tempo_total = time.strftime("%M:%S", time.gmtime(playlist[musica_atual].duracao_segundos_total))
-    # except:
-    #     tempo_total = ("00:00")
     titulo = playlist[musica_atual].titulo
+    tempo_total_segundo = int(playlist[musica_atual].duracao_segundos_total)
 
-    return titulo, tempo_total
+    return titulo, tempo_total, tempo_total_segundo
 
 
 #Busca o diretorio das musicas e cria os objetos música
@@ -122,13 +120,12 @@ def carregar_playlist():
             playlist.append(musica.Musica_Com_Metadados(os.getcwd()+"/musicas/" + music))
         except:
             playlist.append(musica.Musica_Sem_Metadados(os.getcwd()+"/musicas/" + music, music))
-
     return playlist
 
 
 def play_musica(playlist,musica_atual):
     mixer.music.load(playlist[musica_atual].diretorio)
-    mixer.music.queue(playlist[musica_atual + 1].diretorio)
+    #mixer.music.queue(playlist[musica_atual + 1].diretorio)
     mixer.music.play()
     return True
 

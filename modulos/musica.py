@@ -48,8 +48,6 @@ class Musica_Com_Metadados(Musica):
         imagem.save(os.getcwd()+"/modulos/cache/capa.png")
         return True
 
-
-
 class Musica_Sem_Metadados(Musica):
     def __init__(self, diretorio, titulo):
         duracao = MP3(diretorio)
