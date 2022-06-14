@@ -1,49 +1,30 @@
-import PIL.ImageTransform
 from mutagen.mp3 import MP3
-from PIL import Image, ImageTransform
+from PIL import Image
 from io import BytesIO
 import os
 
 class Musica:
-    def __init__(self, diretorio):
-        self.__diretorio = diretorio
-        self.__musica = MP3(diretorio)
-        self.__duracao = self.__musica.info.length
-        self.__titulo = self.__musica.get("TIT2")
-        self.__ano = self.__musica.get("TDRC")
-        self.__artista = self.__musica.get("TPE1")
-        self.__capa = self.__musica.get("APIC:").data
+    def __init__(self, diretorio, titulo, capa, duracao):
+        self._diretorio = diretorio
+        self._titulo = titulo
+        self._capa = capa
+        self._duracao = duracao
 
     @property
     def diretorio(self):
-        return self.__diretorio
-
-    @property
-    def duracao_segundos_total(self):
-        return self.__duracao
+        return self._diretorio
 
     @property
     def titulo(self):
-        return self.__titulo
-
-
-    @property
-    def ano(self):
-        return self.__ano
-
-
-    @property
-    def artista(self):
-        return self.__artista
-
+        return self._titulo
 
     @property
     def capa(self):
-        buffer = self.__capa
-        capa = BytesIO(buffer)
-        imagem = Image.open(capa).resize((335,375))
-        imagem.save(os.getcwd()+"/modulos/cache/capa.png")
+        return self._capa
 
+    @property
+    def duracao_segundos_total(self):
+        return self._duracao
 
     def duracao(self):
         tempo = int(self.duracao_segundos_total)
@@ -53,31 +34,26 @@ class Musica:
         segundos = tempo
         return minutos, segundos
 
-    def __str__(self):
-        return f"{self.artista} - {self.titulo}, {int(self.duracao_segundos_total)} seg. No diretório: {self.diretorio}"
-#
-#
+
+class Musica_Com_Metadados(Musica):
+    def __init__(self, diretorio):
+        self._musica = MP3(diretorio)
+        super().__init__(diretorio=diretorio, titulo=self._musica.get("TIT2"), capa=self._musica.get("APIC:").data, duracao=self._musica.info.length)
+
+    @property
+    def capa(self):
+        buffer = super().capa
+        carrega_foto = BytesIO(buffer)
+        imagem = Image.open(carrega_foto).resize((335,375))
+        imagem.save(os.getcwd()+"/modulos/cache/capa.png")
+        return True
 
 
-# def carregar_playlist():
-#     all_music = os.listdir("../musicas/")
-#     playlist = []
-#     for musica in all_music:
-#         playlist.append("../musicas/" + musica)
-#     return playlist
-#
-#
-#
-#
-# playlist = carregar_playlist()
-# new_playlist = []
-# for song in playlist:
-#     try:
-#         new_playlist.append(Musica(song))
-#     except:
-#         print(song)
-#
-#
-# for song in new_playlist:
-#     print(song)
+
+class Musica_Sem_Metadados(Musica):
+    def __init__(self, diretorio, titulo):
+        duracao = MP3(diretorio)
+        super().__init__(diretorio=diretorio, titulo=titulo, capa=False, duracao=duracao.info.length)
+
+
 
