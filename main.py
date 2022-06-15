@@ -1,10 +1,12 @@
 import PySimpleGUI as sg
 import os
 import time
+import decimal
 from pygame import mixer
 from aplicacao_mp3_player.modulos import botao, musica
 
 mixer.init()
+
 
 def carregar_tela():
     musica_pausada = False
@@ -19,6 +21,7 @@ def carregar_tela():
     playlist = carregar_playlist()
 
     titulo, tempo_total, tempo_total_segundo = carregar_dados_das_musicas(musica_atual, playlist)
+
     if playlist[musica_atual].capa:
         new_capa = os.getcwd()+"/modulos/cache/capa.png"
     else:
@@ -27,8 +30,8 @@ def carregar_tela():
     layout_colum = [[sg.Text(musica_atual,key="-ATUAL-"), sg.Text("/"),sg.Text(len(playlist)-1)],
                     [sg.Text(titulo,key="TITULO")], #sg.Button("", image_data= botao_pastas, button_color=color, border_width=0)
                     [sg.Image(new_capa, key= "CAPA")],
-                    [sg.Text(text="00:00", key="-TEMPO-"), sg.Text("/") ,sg.Text(text=tempo_total, key="TEMPO_TOTAL")],
-                    [sg.ProgressBar(tempo_total_segundo,relief="RELIEF_SUNKEN" ,bar_color="Black",orientation='h',s=(23, 6), k='-PBAR-', pad=(0,10))],
+                    [sg.Text(text="00:00", key="-TEMPO-"), sg.Text("/") ,sg.Text(text=tempo_total , key="TEMPO_TOTAL")],
+                    [sg.ProgressBar(max_value=99,bar_color="Black",orientation='h',s=(23, 6), k='-PBAR-', pad=(0,10))],
                     [sg.Button('', image_data=botao_voltar, button_color=color, border_width=0,key="BACK"),
                    sg.Button('', image_data=botao_avancar, button_color=color, border_width=0, key='NEXT'),
                    sg.Button('', image_data=botao_play, button_color=color, border_width=0, key='PLAY'),
@@ -46,10 +49,11 @@ def carregar_tela():
             break
 
         if mixer.music.get_busy() == True:
+            porcenteagem = get_porcentagem(playlist, musica_atual)
             tempo = mixer.music.get_pos() / 1000
             tempo_atual_musica = time.strftime("%M:%S", time.gmtime(tempo))
             janela["-TEMPO-"].update(tempo_atual_musica)
-            janela["-PBAR-"].update(tempo)
+            janela["-PBAR-"].update(tempo * porcenteagem)
 
         if evento == "PLAY" and not musica_pausada:
             play_musica(playlist, musica_atual)
@@ -84,6 +88,12 @@ def carregar_tela():
 
     janela.close()
 
+
+def get_porcentagem(playlist, musica_atual):
+    porcenteagem = decimal.Decimal(100) / decimal.Decimal(playlist[musica_atual].duracao_segundos_total)
+
+    return float(porcenteagem)
+
 def altera_musica(musica_atual, playlist, janela):
     mixer.music.unload()
     mixer.music.load(playlist[musica_atual].diretorio)
@@ -100,6 +110,8 @@ def altera_musica(musica_atual, playlist, janela):
     janela["TITULO"].update(titulo)
     janela["TEMPO_TOTAL"].update(tempo_total)
     janela["CAPA"].update(new_capa)
+    janela["-PBAR-"].update(tempo_total_segundos)
+
 
 
     #carrega os metadados da musica (titulo, tempo da musica)
