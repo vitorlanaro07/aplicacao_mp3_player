@@ -1,5 +1,16 @@
+import PySimpleGUI as sg
 
+layout =  [
+            [sg.Text('My layout') ],
+            [sg.Slider((0,100), tick_interval=10, key='-SLIDER-'),
+             sg.Slider((0,100), tick_interval=1000, key='-SLIDER2-')],
+            [sg.Button('OK')]
+          ]
 
-porc = round(100/11)
+window = sg.Window('My window', layout)
 
-print(porc)
+while True:
+    event, values = window.read()
+    print(event, values)
+    if event is None:
+        break
