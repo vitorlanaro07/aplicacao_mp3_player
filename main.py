@@ -8,6 +8,7 @@ from modulos import botao, musica
 
 mixer.init()
 display.init()
+mixer.music.set_endevent(USEREVENT)
 
 def carregar_tela():
     musica_pausada = False
@@ -35,7 +36,7 @@ def carregar_tela():
                    sg.Button('', image_data=botao_stop, button_color=color, border_width=0,key="STOP")]
                     ]
 
-    layout = [  [sg.Menu([["Opções",["Selecionar pasta", "Selecionar musica","Sair"]]],pad=(40,0))],
+    layout = [  [sg.Menu([["Opções",["Selecionar pasta", "Selecionar musica","Limpar playslist","Sair"]]],pad=(40,0))],
                 [sg.Column(layout_colum, element_justification="center")]
                 ]
 
@@ -46,6 +47,7 @@ def carregar_tela():
         if evento in (sg.WIN_CLOSED , "Sair", None):
             break
 
+        #Enquanto a musica estiver tocando
         if mixer.music.get_busy() == True:
             porcenteagem = get_porcentagem(playlist, musica_atual)
             tempo = mixer.music.get_pos() / 1000
@@ -53,18 +55,26 @@ def carregar_tela():
             janela["-TEMPO-"].update(tempo_atual_musica)
             janela["-PBAR-"].update(tempo * porcenteagem)
 
-        if evento == "-BOTAO-VOLUME-":
-            if not visibilidade_volume:
-                janela["-VOLUME-"].update(visible=True)
-                visibilidade_volume = True
+        #Avança para a proxima música assim que acaba a atual
+        try:
+            for acabou_musica in event.get():
+                if acabou_musica.type == USEREVENT:
+                    mixer.music.queue(playlist[musica_atual + 1].diretorio)
+                    musica_atual += 1
+                    altera_musica(musica_atual, playlist, janela)
+        except:
+            pass
 
-            elif visibilidade_volume:
-                janela["-VOLUME-"].update(visible=False)
-                visibilidade_volume = False
-
-
-        if evento == "-VOLUME-":
-            mixer.music.set_volume(valores["-VOLUME-"] * 0.1)
+        # try:
+        #     while musica_atual <= len(playlist):
+        # for event in event.get():
+        #     if event.type == USEREVENT:
+        #         print("Ok")
+        #                 # musica_atual += 1
+                        # mixer.music.queue(playlist[musica_atual])
+                        # print(playlist[musica_atual])
+        # except:
+        #     pass
 
 
         try:
@@ -75,6 +85,12 @@ def carregar_tela():
                 musica_pausada = True
         except:
             pass
+
+
+        #Se acabar a playlist e clicar em play, a playlist recomeça da primeira
+        if evento == "PLAY" and musica_atual == len(playlist) - 1 and not musica_pausada:
+            musica_atual = 0
+            altera_musica(musica_atual, playlist, janela)
 
         if musica_pausada and evento == "PLAY":
             mixer.music.unpause()
@@ -120,6 +136,27 @@ def carregar_tela():
         except:
             pass
 
+        # Limpar playlist
+        if evento == "Limpar playslist":
+            mixer.music.stop()
+            playlist = []
+            musica_atual = 0
+            update_dados("", "00:00", 0, playlist, musica_atual, janela)
+
+        # Abrir o volume
+        if evento == "-BOTAO-VOLUME-":
+            if not visibilidade_volume:
+                janela["-VOLUME-"].update(visible=True)
+                visibilidade_volume = True
+
+            elif visibilidade_volume:
+                janela["-VOLUME-"].update(visible=False)
+                visibilidade_volume = False
+
+        # Slider volume
+        if evento == "-VOLUME-":
+            mixer.music.set_volume(valores["-VOLUME-"] * 0.1)
+
     janela.close()
 
 
@@ -140,16 +177,25 @@ def carrega_pasta_ou_musica(pasta_ou_musica, musica_atual, playlist, janela, tip
 
 def update_dados(titulo, tempo_total, tempo_total_segundos, playlist, musica_atual, janela):
     try:
-        if playlist[musica_atual].capa:
-            new_capa = os.getcwd()+"/modulos/cache/capa.png"
+        try:
+            if playlist[musica_atual].capa:
+                new_capa = os.getcwd()+"/modulos/cache/capa.png"
+            else:
+                new_capa = os.getcwd()+"/modulos/cache/capa_vazia.png"
+        except:
+            new_capa = os.getcwd() + "/modulos/cache/capa_vazia.png"
+        if len(playlist) > 0:
+            janela["-ATUAL-"].update(musica_atual + 1)
+            janela["-TOTAL-"].update(len(playlist))
         else:
-            new_capa = os.getcwd()+"/modulos/cache/capa_vazia.png"
-        janela["-ATUAL-"].update(musica_atual)
-        janela["-TOTAL-"].update(len(playlist) - 1)
+            janela["-ATUAL-"].update(0)
+            janela["-TOTAL-"].update(0)
+
         janela["TITULO"].update(titulo)
         janela["TEMPO_TOTAL"].update(tempo_total)
         janela["CAPA"].update(new_capa)
-        janela["-PBAR-"].update(tempo_total_segundos)
+        janela["-PBAR-"].update(0)
+        janela["-TEMPO-"].update("00:00")
     except:
         pass
 
@@ -167,7 +213,7 @@ def altera_musica(musica_atual, playlist, janela):
     update_dados(titulo, tempo_total, tempo_total_segundos, playlist, musica_atual, janela)
 
 
-    #carrega os metadados da musica (titulo, tempo da musica)
+#carrega os metadados da musica (titulo, tempo da musica)
 def carregar_dados_das_musicas(musica_atual, playlist):
     try:
         tempo_total = time.strftime("%M:%S", time.gmtime(playlist[musica_atual].duracao_segundos_total))
@@ -207,7 +253,11 @@ def carregar_playlist(diretorio, tipo, playlist):
 
 def play_musica(playlist,musica_atual):
     mixer.music.load(playlist[musica_atual].diretorio)
-    #mixer.music.queue(playlist[musica_atual + 1].diretorio)
+    try:
+        for x in range(len(playlist) - 1):  # coloca na fila as restantes
+            mixer.music.queue(playlist[x + 1].diretorio)
+    except:
+        pass
     mixer.music.play()
     return True
 
