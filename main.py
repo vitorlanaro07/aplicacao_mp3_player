@@ -231,19 +231,19 @@ def carregar_playlist(diretorio, tipo, playlist):
         if tipo == "pasta":
             all_music2 = pathlib.Path(diretorio)
             for music in all_music2.glob("*.mp3"):
-                print(music)
+                nome_da_musica = os.path.basename(music)
+                print(nome_da_musica)
                 try:
-                    playlist.append(musica.Musica_Com_Metadados(music))
+                    playlist.append(musica.Musica_Com_Metadados(music, nome_da_musica))
                 except:
-                    nome_da_musica = os.path.basename(music)
                     playlist.append(musica.Musica_Sem_Metadados(music, nome_da_musica))
             return playlist
         else:
+            nome_da_musica = os.path.basename(diretorio)
             try:
-                playlist.append(musica.Musica_Com_Metadados(diretorio))
+                playlist.append(musica.Musica_Com_Metadados(diretorio, nome_da_musica))
                 return playlist
             except:
-                nome_da_musica = os.path.basename(diretorio)
                 playlist.append(musica.Musica_Sem_Metadados(diretorio, nome_da_musica))
                 return playlist
     except:

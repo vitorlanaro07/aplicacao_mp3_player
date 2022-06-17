@@ -36,9 +36,9 @@ class Musica:
 
 
 class Musica_Com_Metadados(Musica):
-    def __init__(self, diretorio):
+    def __init__(self, diretorio, titulo):
         self._musica = MP3(diretorio)
-        super().__init__(diretorio=diretorio, titulo=self._musica.get("TIT2"), capa=self._musica.get("APIC:").data, duracao=self._musica.info.length)
+        super().__init__(diretorio=diretorio, titulo=titulo, capa=self._musica.get("APIC:").data, duracao=self._musica.info.length)
 
     @property
     def capa(self):
