@@ -12,11 +12,13 @@ mixer.music.set_endevent(USEREVENT)
 
 def carregar_tela():
     musica_pausada = False
+    stop = False
     musica_atual = 0
     visibilidade_volume = False
     playlist = []
     sg.theme("DarkAmber")
     color = (sg.theme_background_color(), sg.theme_background_color())
+
     #carrega imagens dos botões
     botao_voltar, botao_play, botao_pause, botao_avancar, botao_stop, botao_volume = carregar_botoes()
 
@@ -24,7 +26,7 @@ def carregar_tela():
 
     layout_colum = [[sg.Text("0",key="-ATUAL-"), sg.Text("/"),sg.Text("0", key="-TOTAL-")],
                     [sg.Text("",key="TITULO")],
-                    [sg.Image(new_capa, key= "CAPA")], #sg.Slider(range=(0, 100), size=(15, 15), visible=True, orientation="v")],
+                    [sg.Image(new_capa, key= "CAPA")],
                     [sg.Text(text="00:00", key="-TEMPO-"), sg.Text("/") ,sg.Text(text="00:00" , key="TEMPO_TOTAL"),
                      sg.Button("", image_data=botao_volume, button_color=color, border_width=0, key="-BOTAO-VOLUME-"),
                      sg.Slider((0,10), default_value=10, orientation="h", visible= False, size=(10,20), enable_events=True, key="-VOLUME-")],
@@ -58,7 +60,7 @@ def carregar_tela():
         #Avança para a proxima música assim que acaba a atual
         try:
             for acabou_musica in event.get():
-                if acabou_musica.type == USEREVENT:
+                if acabou_musica.type == USEREVENT and not stop:
                     mixer.music.queue(playlist[musica_atual + 1].diretorio)
                     musica_atual += 1
                     altera_musica(musica_atual, playlist, janela)
@@ -66,8 +68,12 @@ def carregar_tela():
             pass
 
         try:
-            if evento == "PLAY" and not musica_pausada:
+            if evento == "PLAY" and musica_atual == len(playlist) - 1 and not musica_pausada and not stop:
+                musica_atual = 0
+                altera_musica(musica_atual, playlist, janela)
+            elif evento == "PLAY" and not musica_pausada and mixer.music.get_busy() == False:
                 play_musica(playlist, musica_atual)
+                stop = False
             elif evento == "PAUSE":
                 mixer.music.pause()
                 musica_pausada = True
@@ -75,17 +81,13 @@ def carregar_tela():
             pass
 
 
-        #Se acabar a playlist e clicar em play, a playlist recomeça da primeira
-        if evento == "PLAY" and musica_atual == len(playlist) - 1 and not musica_pausada:
-            musica_atual = 0
-            altera_musica(musica_atual, playlist, janela)
-
         if musica_pausada and evento == "PLAY":
             mixer.music.unpause()
             musica_pausada = False
 
         if evento == "STOP":
             mixer.music.stop()
+            stop = True
 
         try:
             if evento == "NEXT":
