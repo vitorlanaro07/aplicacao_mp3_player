@@ -65,18 +65,6 @@ def carregar_tela():
         except:
             pass
 
-        # try:
-        #     while musica_atual <= len(playlist):
-        # for event in event.get():
-        #     if event.type == USEREVENT:
-        #         print("Ok")
-        #                 # musica_atual += 1
-                        # mixer.music.queue(playlist[musica_atual])
-                        # print(playlist[musica_atual])
-        # except:
-        #     pass
-
-
         try:
             if evento == "PLAY" and not musica_pausada:
                 play_musica(playlist, musica_atual)
@@ -116,7 +104,6 @@ def carregar_tela():
                     musica_atual -=1
                     altera_musica(musica_atual, playlist, janela)
                 else:
-                    print(musica_atual)
                     musica_atual = len(playlist) - 1
                     altera_musica(musica_atual, playlist, janela)
         except:
@@ -163,8 +150,9 @@ def carregar_tela():
 
 
 def carrega_pasta_ou_musica(pasta_ou_musica, musica_atual, playlist, janela, tipo):
+    print(str(pasta_ou_musica))
     if tipo == "pasta":
-        print(str(pasta_ou_musica))
+
         playlist = carregar_playlist(str(pasta_ou_musica), tipo, playlist)
     else:
         playlist = carregar_playlist(str(pasta_ou_musica),tipo, playlist)
@@ -240,6 +228,7 @@ def carregar_playlist(diretorio, tipo, playlist):
             return playlist
         else:
             nome_da_musica = os.path.basename(diretorio)
+            print(nome_da_musica)
             try:
                 playlist.append(musica.Musica_Com_Metadados(diretorio, nome_da_musica))
                 return playlist
