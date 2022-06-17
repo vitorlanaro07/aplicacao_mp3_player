@@ -3,7 +3,6 @@ import PySimpleGUI as sg
 import os
 import time
 import decimal
-
 from pygame import mixer, display, event, USEREVENT
 from modulos import botao, musica
 
