@@ -23,3 +23,4 @@ class Botao:
         self.imagem.resize((nova_resolucao)).save(buffer, format="PNG")
         return base64.b64encode(buffer.getvalue())
 
+

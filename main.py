@@ -1,9 +1,11 @@
+import pathlib
 import PySimpleGUI as sg
 import os
 import time
 import decimal
+
 from pygame import mixer, display, event, USEREVENT
-from aplicacao_mp3_player.modulos import botao, musica
+from modulos import botao, musica
 
 mixer.init()
 display.init()
@@ -11,19 +13,21 @@ display.init()
 def carregar_tela():
     musica_pausada = False
     musica_atual = 0
+    visibilidade_volume = False
     playlist = []
     sg.theme("DarkAmber")
     color = (sg.theme_background_color(), sg.theme_background_color())
-
     #carrega imagens dos botões
-    botao_voltar, botao_play, botao_pause, botao_avancar, botao_stop, botao_pastas = carregar_botoes()
+    botao_voltar, botao_play, botao_pause, botao_avancar, botao_stop, botao_volume = carregar_botoes()
 
     new_capa = os.getcwd()+"/modulos/cache/capa_vazia.png"
 
     layout_colum = [[sg.Text("0",key="-ATUAL-"), sg.Text("/"),sg.Text("0", key="-TOTAL-")],
                     [sg.Text("",key="TITULO")],
                     [sg.Image(new_capa, key= "CAPA")], #sg.Slider(range=(0, 100), size=(15, 15), visible=True, orientation="v")],
-                    [sg.Text(text="00:00", key="-TEMPO-"), sg.Text("/") ,sg.Text(text="00:00" , key="TEMPO_TOTAL")],
+                    [sg.Text(text="00:00", key="-TEMPO-"), sg.Text("/") ,sg.Text(text="00:00" , key="TEMPO_TOTAL"),
+                     sg.Button("", image_data=botao_volume, button_color=color, border_width=0, key="-BOTAO-VOLUME-"),
+                     sg.Slider((0,10), default_value=10, orientation="h", visible= False, size=(10,20), enable_events=True, key="-VOLUME-")],
                     [sg.ProgressBar(max_value=99,bar_color="Black",orientation='h',s=(23, 6), k='-PBAR-', pad=(0,10))],
                     [sg.Button('', image_data=botao_voltar, button_color=color, border_width=0,key="BACK"),
                    sg.Button('', image_data=botao_avancar, button_color=color, border_width=0, key='NEXT'),
@@ -32,7 +36,7 @@ def carregar_tela():
                    sg.Button('', image_data=botao_stop, button_color=color, border_width=0,key="STOP")]
                     ]
 
-    layout = [  [sg.Menu([["Opções",["Selecionar Pasta", "Selecionar Musica"]],["Sair"]],pad=(40,0))],
+    layout = [  [sg.Menu([["Opções",["Selecionar pasta", "Selecionar musica","Sair"]]],pad=(40,0))],
                 [sg.Column(layout_colum, element_justification="center")]
                 ]
 
@@ -40,7 +44,6 @@ def carregar_tela():
 
     while True:
         evento, valores = janela.read(timeout=1000)
-        print(evento,valores)
         if evento in (sg.WIN_CLOSED , "Sair", None):
             break
 
@@ -51,11 +54,28 @@ def carregar_tela():
             janela["-TEMPO-"].update(tempo_atual_musica)
             janela["-PBAR-"].update(tempo * porcenteagem)
 
-        if evento == "PLAY" and not musica_pausada:
-            play_musica(playlist, musica_atual)
-        elif evento == "PAUSE":
-            mixer.music.pause()
-            musica_pausada = True
+        if evento == "-BOTAO-VOLUME-":
+            if not visibilidade_volume:
+                janela["-VOLUME-"].update(visible=True)
+                visibilidade_volume = True
+
+            elif visibilidade_volume:
+                janela["-VOLUME-"].update(visible=False)
+                visibilidade_volume = False
+
+
+        if evento == "-VOLUME-":
+            mixer.music.set_volume(valores["-VOLUME-"] * 0.1)
+
+
+        try:
+            if evento == "PLAY" and not musica_pausada:
+                play_musica(playlist, musica_atual)
+            elif evento == "PAUSE":
+                mixer.music.pause()
+                musica_pausada = True
+        except:
+            pass
 
         if musica_pausada and evento == "PLAY":
             mixer.music.unpause()
@@ -64,39 +84,51 @@ def carregar_tela():
         if evento == "STOP":
             mixer.music.stop()
 
-        if evento == "NEXT":
-            try:
-                musica_atual += 1
-                altera_musica(musica_atual, playlist, janela)
-            except:
-                musica_atual = 0
-                altera_musica(musica_atual, playlist, janela)
+        try:
+            if evento == "NEXT":
+                try:
+                    musica_atual += 1
+                    altera_musica(musica_atual, playlist, janela)
+                except:
+                    musica_atual = 0
+                    altera_musica(musica_atual, playlist, janela)
+        except:
+            pass
 
-        if evento == "BACK":
-            if not musica_atual <= 0:
-                musica_atual -=1
-                altera_musica(musica_atual, playlist, janela)
-            else:
-                print(musica_atual)
-                musica_atual = len(playlist) - 1
-                altera_musica(musica_atual, playlist, janela)
-        if event.get() == USEREVENT:
-            print("OK")
+        try:
+            if evento == "BACK":
+                if not musica_atual <= 0:
+                    musica_atual -=1
+                    altera_musica(musica_atual, playlist, janela)
+                else:
+                    print(musica_atual)
+                    musica_atual = len(playlist) - 1
+                    altera_musica(musica_atual, playlist, janela)
+        except:
+            pass
 
-        if evento == "Selecionar Pasta":
-            pasta_ou_musica = sg.popup_get_folder('Escolha a pasta das músicas', keep_on_top=True)
-            playlist, musica_atual = carrega_pasta_ou_musica(str(pasta_ou_musica), musica_atual, playlist, janela, "pasta")
+        try:
+            if evento == "Selecionar pasta":
+                pasta_ou_musica = sg.popup_get_folder('Escolha a pasta das músicas', keep_on_top=True)
+                playlist, musica_atual = carrega_pasta_ou_musica(str(pasta_ou_musica + "/"), musica_atual, playlist, janela, "pasta")
+        except:
+            pass
 
-        if evento == "Selecionar Musica":
-            pasta_ou_musica = sg.popup_get_file('Escolha sua música', keep_on_top=True)
-            playlist, musica_atual = carrega_pasta_ou_musica(str(pasta_ou_musica), musica_atual, playlist, janela, "musica")
+        try:
+            if evento == "Selecionar musica":
+                pasta_ou_musica = sg.popup_get_file('Escolha sua música', keep_on_top=True)
+                playlist, musica_atual = carrega_pasta_ou_musica(str(pasta_ou_musica), musica_atual, playlist, janela, "musica")
+        except:
+            pass
 
     janela.close()
 
 
-#Tenho que verificar se a playlist está vazia
+
+
 def carrega_pasta_ou_musica(pasta_ou_musica, musica_atual, playlist, janela, tipo):
     if tipo == "pasta":
+        print(str(pasta_ou_musica))
         playlist = carregar_playlist(str(pasta_ou_musica), tipo, playlist)
     else:
         playlist = carregar_playlist(str(pasta_ou_musica),tipo, playlist)
@@ -113,7 +145,6 @@ def update_dados(titulo, tempo_total, tempo_total_segundos, playlist, musica_atu
             new_capa = os.getcwd()+"/modulos/cache/capa.png"
         else:
             new_capa = os.getcwd()+"/modulos/cache/capa_vazia.png"
-
         janela["-ATUAL-"].update(musica_atual)
         janela["-TOTAL-"].update(len(playlist) - 1)
         janela["TITULO"].update(titulo)
@@ -123,19 +154,18 @@ def update_dados(titulo, tempo_total, tempo_total_segundos, playlist, musica_atu
     except:
         pass
 
+
 def get_porcentagem(playlist, musica_atual):
     porcenteagem = decimal.Decimal(100) / decimal.Decimal(playlist[musica_atual].duracao_segundos_total)
     return float(porcenteagem)
+
 
 def altera_musica(musica_atual, playlist, janela):
     mixer.music.unload()
     mixer.music.load(playlist[musica_atual].diretorio)
     mixer.music.play()
-
     titulo, tempo_total, tempo_total_segundos = carregar_dados_das_musicas(musica_atual, playlist)
-
     update_dados(titulo, tempo_total, tempo_total_segundos, playlist, musica_atual, janela)
-
 
 
     #carrega os metadados da musica (titulo, tempo da musica)
@@ -147,31 +177,34 @@ def carregar_dados_das_musicas(musica_atual, playlist):
     except:
         titulo, tempo_total, tempo_total_segundo = "", "00:00", 0
 
-
     return titulo, tempo_total, tempo_total_segundo
 
 
 #Busca o diretorio das musicas e cria os objetos música
 def carregar_playlist(diretorio, tipo, playlist):
-
-    if tipo == "pasta":
-        try:
-            all_music = os.listdir(diretorio)
-            for music in all_music:
+    try:
+        if tipo == "pasta":
+            all_music2 = pathlib.Path(diretorio)
+            for music in all_music2.glob("*.mp3"):
+                print(music)
                 try:
-                    playlist.append(musica.Musica_Com_Metadados(os.getcwd()+"/musicas/" + music))
+                    playlist.append(musica.Musica_Com_Metadados(music))
                 except:
-                    playlist.append(musica.Musica_Sem_Metadados(os.getcwd()+"/musicas/" + music, music))
-        except:
-            pass
-    else:
-        try:
-            playlist.append(musica.Musica_Com_Metadados(diretorio))
-        except:
-            playlist.append(musica.Musica_Sem_Metadados(diretorio,"teste"))
+                    nome_da_musica = os.path.basename(music)
+                    playlist.append(musica.Musica_Sem_Metadados(music, nome_da_musica))
+            return playlist
+        else:
+            try:
+                playlist.append(musica.Musica_Com_Metadados(diretorio))
+                return playlist
+            except:
+                nome_da_musica = os.path.basename(diretorio)
+                playlist.append(musica.Musica_Sem_Metadados(diretorio, nome_da_musica))
+                return playlist
+    except:
+        pass
 
     return playlist
-
 
 def play_musica(playlist,musica_atual):
     mixer.music.load(playlist[musica_atual].diretorio)
@@ -179,22 +212,23 @@ def play_musica(playlist,musica_atual):
     mixer.music.play()
     return True
 
+
 def carregar_botoes():
     botao_voltar = botao.Botao(os.getcwd()+"/imagens/voltar.png")
     botao_play = botao.Botao(os.getcwd()+"/imagens/play.png")
     botao_pause = botao.Botao(os.getcwd()+"/imagens/pause.png")
     botao_avancar = botao.Botao(os.getcwd()+"/imagens/proxima.png")
     botao_stop = botao.Botao(os.getcwd()+"/imagens/stop.png")
-    botao_pastas = botao.Botao(os.getcwd()+"/imagens/pastas.png")
+    botao_volume = botao.Botao(os.getcwd()+"/imagens/alto-falante.png")
 
     botao_voltar_base_64 = botao_voltar.resize_da_imagem_para_base64(65,65)
     botao_play_base_64 = botao_play.resize_da_imagem_para_base64(65,65)
     botao_pause_base_64 = botao_pause.resize_da_imagem_para_base64(65,65)
     botao_avancar_base_64 = botao_avancar.resize_da_imagem_para_base64(65, 65)
     botao_stop_base_64 = botao_stop.resize_da_imagem_para_base64(65,65)
-    botao_pastas_base_64 = botao_pastas.resize_da_imagem_para_base64(40,40)
+    botao_volume_base_64 = botao_volume.resize_da_imagem_para_base64(30,30)
 
-    return botao_voltar_base_64, botao_play_base_64, botao_pause_base_64, botao_avancar_base_64, botao_stop_base_64, botao_pastas_base_64
+    return botao_voltar_base_64, botao_play_base_64, botao_pause_base_64, botao_avancar_base_64, botao_stop_base_64, botao_volume_base_64
 
 
 if __name__ == "__main__":
